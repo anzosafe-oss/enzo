@@ -89,7 +89,7 @@ document.querySelector('#reauthForm').addEventListener('submit',async e=>{
  try{
   const {data,error}=await client.auth.signInWithPassword({email,password:document.querySelector('#reauthPassword').value});
   if(error||data.user?.id!==uid)throw error||new Error('Cont diferit');
-  editUntil=Date.now()+4*60*1000+50000;
+  editUntil=Date.now()+60*60*1000-10000;
   finishReauth(true);
  }catch(error){document.querySelector('#reauthStatus').textContent='Parola nu a fost confirmată. Verifică parola și conexiunea.';document.querySelector('#reauthPassword').value='';document.querySelector('#reauthPassword').focus()}
  finally{reauthBusy=false;document.querySelector('#reauthSubmit').disabled=false;document.querySelector('#reauthCancel').disabled=false}

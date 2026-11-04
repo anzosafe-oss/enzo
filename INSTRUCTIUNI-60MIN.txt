@@ -1,0 +1,35 @@
+ENZO — ACTUALIZARE LA 60 DE MINUTE (v6)
+
+Acest pachet actualizeaza aplicatia existenta v5. Nu este un pachet pentru prima instalare.
+
+1. SUPABASE
+Deschide proiectul enzo > SQL Editor > New query.
+Copiaza intreg continutul UPDATE_EDIT_60MIN.sql, apoi Run.
+Actualizeaza functia folosita de politicile existente pentru adaugare, modificare si stergere.
+Nu sterge date si nu modifica dreptul de citire.
+
+2. GITHUB
+Deschide https://github.com/anzosafe-oss/enzo
+Add file > Upload files.
+Incarca index.html, app.js si sw.js din acest pachet. Commit changes.
+Nu incarca fisierul SQL in GitHub; se ruleaza numai in Supabase.
+Poti pastra aceste instructiuni in repository pentru referinta.
+Asteapta publicarea GitHub Pages. Inchide si redeschide aplicatia.
+
+3. TEST
+Apasa Adauga sau Modifica si confirma parola.
+Accesul la editare ramane activ aproximativ 60 de minute de la confirmare,
+cu o marja de 10 secunde pentru comunicarea cu serverul.
+Dupa expirare se cere din nou parola; vizualizarea carnetului ramane disponibila.
+Reincarcarea completa a paginii reseteaza blocarea locala si poate cere din nou parola.
+LogOut necesita autentificare la urmatoarea deschidere.
+
+4. PENTRU VIITOR
+Durata se modifica in ambele locuri:
+- app.js: editUntil=Date.now()+60*60*1000-10000;
+- Supabase: functia public.enzo_recent_password(), pragul 3600 (secunde).
+Textul ferestrei se afla in index.html.
+La fiecare actualizare schimba identificatorul CACHE din sw.js.
+Nu introduce parole sau chei secret/service_role in fisierele GitHub.
+
+Datele sunt in Supabase; actualizarea acestor fisiere nu le sterge.
