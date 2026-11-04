@@ -1,0 +1,49 @@
+'use strict';
+const client = supabase.createClient('https://caajrctjlxehhofuwhag.supabase.co','sb_publishable_9MJ6QZaJ13nfuwYJyLZSmA_WAh0Rret');
+const categories=['Vaccinuri','Vaccin Antirabic','Deparazitari Interne','Deparazitari Externe','Greutate'];
+const labels=['Vaccinuri','Vaccin antirabic','Deparazitări interne','Deparazitări externe','Greutate'];
+const form=document.querySelector('#form'),save=document.querySelector('#save'),statusEl=document.querySelector('#status');
+const loginPanel=document.querySelector('#loginPanel'),appPanel=document.querySelector('#appPanel'),loginForm=document.querySelector('#loginForm');
+let selected=categories[0],records=[],editingId=null,pendingId=null,busy=false,user=null,loadSequence=0;
+function message(s,error=false){statusEl.textContent=s;statusEl.classList.toggle('error',error)}
+function today(){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Bucharest'}).format(new Date())}
+function formatDate(s){return s?s.split('-').reverse().join('.'):''}
+function calculateAge(birth,current){
+ let years=current.year-birth.year;
+ if(current.month<birth.month||(current.month===birth.month&&current.day<birth.day))years--;
+ let months=(current.year-(birth.year+years))*12+current.month-birth.month;
+ function anchor(m){const total=birth.month-1+m,year=birth.year+years+Math.floor(total/12),month=((total%12)+12)%12;return new Date(Date.UTC(year,month,Math.min(birth.day,new Date(Date.UTC(year,month+1,0)).getUTCDate())))}
+ const end=new Date(Date.UTC(current.year,current.month-1,current.day));if(anchor(months)>end)months--;
+ return {years,months,days:Math.round((end-anchor(months))/86400000)};
+}
+function updateAge(){const [year,month,day]=today().split('-').map(Number),a=calculateAge({year:2026,month:5,day:25},{year,month,day});document.querySelector('#enzoAge').textContent=`${a.years} ${a.years===1?'an':'ani'} ${a.months} ${a.months===1?'lună':'luni'} ${a.days} ${a.days===1?'zi':'zile'}`}
+updateAge();setInterval(updateAge,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateAge()});
+form.elements.date.value=today();
+const nav=document.querySelector('.tabs');
+categories.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.textContent=labels[i];b.onclick=()=>{if(busy)return;cancelEdit();selected=c;setCategory();render()};nav.append(b)});
+function setCategory(){const weight=selected==='Greutate';nav.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-pressed',String(categories[i]===selected)));document.querySelectorAll('.treatment').forEach(el=>{el.hidden=weight;el.querySelector('input').disabled=weight});document.querySelector('#weightField').hidden=!weight;form.elements.weight.disabled=!weight;form.elements.weight.required=weight;form.elements.product.required=!weight;document.querySelector('#categoryLabel').textContent=labels[categories.indexOf(selected)]}
+function cancelEdit(){editingId=null;pendingId=null;form.reset();form.elements.date.value=today();document.querySelector('#formTitle').textContent='Adaugă o înregistrare';document.querySelector('#cancelEdit').hidden=true;save.textContent='Salvează'}
+function startEdit(r){if(busy)return;editingId=r.id;pendingId=null;['date','product','weight','vet','notes'].forEach(n=>form.elements[n].value=r[n]??'');form.elements.nextDate.value=r.next_date||'';document.querySelector('#formTitle').textContent='Modifică înregistrarea';document.querySelector('#cancelEdit').hidden=false;message('Modifici înregistrarea din '+formatDate(r.date)+'.');form.scrollIntoView({behavior:'smooth',block:'start'})}
+document.querySelector('#cancelEdit').onclick=()=>{if(!busy){cancelEdit();message('Modificarea a fost anulată.')}};
+function render(){const list=document.querySelector('#history');list.replaceChildren();const rows=records.filter(r=>r.category===selected);document.querySelector('#count').textContent=`(${rows.length})`;if(!rows.length){const p=document.createElement('p');p.className='empty';p.textContent='Încă nu ai înregistrări în această categorie.';list.append(p)}rows.forEach(r=>{const article=document.createElement('article');article.className='entry';const date=document.createElement('time');date.textContent=formatDate(r.date);const title=document.createElement('strong');title.textContent=r.category==='Greutate'?String(r.weight).replace('.',',')+' kg':r.product;article.append(date,title);[r.next_date?'Următoarea administrare: '+formatDate(r.next_date):'',r.vet,r.notes].filter(Boolean).forEach(s=>{const p=document.createElement('p');p.textContent=s;article.append(p)});const b=document.createElement('button');b.type='button';b.textContent='Modifică';b.disabled=busy;b.onclick=()=>startEdit(r);article.append(b);list.append(article)})}
+function setBusy(value){busy=value;save.disabled=value||!user;document.querySelector('#refresh').disabled=value;document.querySelector('#cancelEdit').disabled=value;document.querySelector('#logout').disabled=value;nav.querySelectorAll('button').forEach(b=>b.disabled=value);form.querySelectorAll('input,textarea').forEach(el=>el.readOnly=value);render()}
+async function load(){if(!user||busy)return;const seq=++loadSequence,uid=user.id;document.querySelector('#refresh').disabled=true;message('Se încarcă istoricul…');try{const {data,error}=await client.from('health_records').select('*').eq('user_id',uid).order('date',{ascending:false}).order('created_at',{ascending:false});if(error)throw error;if(seq!==loadSequence||user?.id!==uid)return;records=data;render();message('Datele sunt încărcate.')}catch(e){if(seq===loadSequence)message(navigator.onLine?'Istoricul nu a putut fi încărcat. Apasă Reîncarcă pentru a încerca din nou.':'Nu ai conexiune la internet. Reconectează-te și apasă Reîncarcă.',true)}finally{if(seq===loadSequence)document.querySelector('#refresh').disabled=false}}
+document.querySelector('#refresh').onclick=load;
+form.addEventListener('input',()=>pendingId=null);
+form.addEventListener('submit',async e=>{e.preventDefault();if(!user||busy||!form.reportValidity())return;const values=Object.fromEntries(new FormData(form)),weight=selected==='Greutate';if(!weight&&values.nextDate&&values.nextDate<values.date){message('Următoarea administrare nu poate fi înaintea datei înregistrării.',true);return}if(!weight&&!values.product.trim()){message('Completează produsul.',true);return}pendingId=pendingId||crypto.randomUUID();const id=editingId||pendingId,wasEdit=!!editingId;
+ const payload={category:selected,date:values.date,product:weight?'':values.product.trim(),next_date:weight?null:values.nextDate||null,weight:weight?Number(values.weight):null,vet:values.vet.trim(),notes:values.notes.trim()};
+ setBusy(true);message('Se salvează…');try{
+  let result;
+  if(wasEdit)result=await client.from('health_records').update(payload).eq('id',id).eq('user_id',user.id).select().single();
+  else {result=await client.from('health_records').insert({...payload,id,user_id:user.id}).select().single();
+   if(result.error?.code==='23505')result=await client.from('health_records').select('*').eq('id',id).eq('user_id',user.id).single();}
+  if(result.error)throw result.error;
+  records=records.filter(r=>r.id!==id);records.push(result.data);records.sort((a,b)=>b.date.localeCompare(a.date)||b.created_at.localeCompare(a.created_at));cancelEdit();message(wasEdit?'Modificările au fost salvate.':'Înregistrarea a fost salvată.');
+ }catch(e){message(navigator.onLine?'Salvarea nu a fost confirmată. Câmpurile au fost păstrate; poți reîncerca.':'Nu ai conexiune la internet. Câmpurile au fost păstrate; reconectează-te și reîncearcă.',true)}finally{setBusy(false)}});
+loginForm.addEventListener('submit',async e=>{e.preventDefault();const button=document.querySelector('#loginButton'),msg=document.querySelector('#loginStatus');button.disabled=true;msg.textContent='Se verifică datele…';try{const {error}=await client.auth.signInWithPassword({email:loginForm.elements.email.value.trim(),password:loginForm.elements.password.value});if(error)throw error;loginForm.elements.password.value='';msg.textContent=''}catch(e){msg.textContent=navigator.onLine?'Autentificarea nu a reușit. Verifică e-mailul și parola și încearcă din nou.':'Nu ai conexiune la internet.'}finally{button.disabled=false}});
+document.querySelector('#logout').onclick=async()=>{if(busy)return;document.querySelector('#logout').disabled=true;const {error}=await client.auth.signOut({scope:'local'});document.querySelector('#logout').disabled=false;if(error)message('Deconectarea nu a reușit. Încearcă din nou.',true)};
+function sessionChanged(session){const previous=user?.id;user=session?.user||null;loginPanel.hidden=!!user;appPanel.hidden=!user;save.disabled=!user;if(!user){++loadSequence;records=[];cancelEdit();render()}else if(previous!==user.id){records=[];cancelEdit();render();setTimeout(load,0)}}
+client.auth.onAuthStateChange((_event,session)=>sessionChanged(session));
+setCategory();render();
+client.auth.getSession().then(({data,error})=>{if(error){document.querySelector('#loginStatus').textContent='Conexiunea nu a putut fi verificată. Încearcă să te autentifici.';return}sessionChanged(data.session)});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
