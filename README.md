@@ -13,7 +13,7 @@ Datele existente în Google Sheets nu sunt importate automat. Code.gs nu este fo
 
 ## Testare
 Autentificare; adăugare în fiecare categorie; modificare; reîncărcare; verificare pe al doilea dispozitiv; deconectare.
-Testează cu înregistrări marcate TEST. Aplicația nu oferă ștergere; datele de test pot fi șterse din Table Editor în Supabase.
+Testează cu înregistrări marcate TEST. Ștergerea este disponibilă după rularea SETUP_DELETE.sql în Supabase SQL Editor. Fiecare ștergere cere confirmare și este definitivă.
 
 ## Offline
 Interfața poate fi disponibilă offline după prima vizită. Citirea și salvarea datelor necesită internet; nu există coadă de salvări offline.
@@ -21,3 +21,7 @@ Interfața poate fi disponibilă offline după prima vizită. Citirea și salvar
 La schimbarea fișierelor, schimbă și numărul CACHE în sw.js. Fișierele sunt cerute mai întâi din rețea.
 ## Biblioteca
 vendor/supabase.min.js: @supabase/supabase-js 2.49.8, distribuția UMD; licență MIT. Vezi SUPABASE-LICENSE.txt.
+
+## Versiunea 4
+Include iconițe locale, corecția Safari, titlul categoriei în card și ștergere cu confirmare.
+Rulează SETUP_DELETE.sql în Supabase SQL Editor înainte de testarea ștergerii. Nu modifică sau șterge date existente.

@@ -33,16 +33,20 @@ h1{overflow-wrap:anywhere;line-height:1.2}
  .history-head{flex-wrap:wrap}
  .card{padding:20px;overflow-wrap:anywhere}
 }
-</style><link rel="icon" type="image/png" href="https://anzosafe-oss.github.io/mysubs-assets/enzo-favicon.png">
-<link rel="apple-touch-icon" href="https://anzosafe-oss.github.io/mysubs-assets/enzo-favicon.png">
+.entry:last-child{border-bottom:0;padding-bottom:0}.entry-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.delete-record{background:#faeae6;color:#92382c}
+</style>
+
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#234e46">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Enzo">
 </head><body>
 
 <main>
 <section id="loginPanel" class="card" style="max-width:440px;margin:30px auto"><h1 style="font-size:28px">Carnetul lui Enzo</h1><p>Intră în cont pentru a vedea și actualiza carnetul.</p><form id="loginForm"><label>E-mail<input name="email" type="email" autocomplete="username" required></label><label style="margin-top:16px">Parolă<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" id="loginButton">Autentificare</button></form><p id="loginStatus" role="status" aria-live="polite"></p></section>
 <div id="appPanel" hidden><div style="display:flex;justify-content:flex-end"><button id="logout" type="button">Ieșire din cont</button></div><h1>Carnet de Sanatate Enzo</h1>
 <dl class="profile"><div><dt>Nume:</dt><dd>Quintus Enzo</dd></div><div><dt>Rasa:</dt><dd>Staffordshire Bull Terrier</dd></div><div><dt>Data Nastere:</dt><dd>25.05.2026</dd></div><div><dt>Vârsta:</dt><dd id="enzoAge"></dd></div><div><dt>Canisa:</dt><dd>Transfilvania Staff SBT</dd></div><div><dt>CIP:</dt><dd>642096302089370</dd></div></dl>
-<nav class="tabs" aria-label="Categorii"></nav><div class="grid"><section class="card"><div class="history-head"><h2>Istoric <span id="count"></span></h2><button id="refresh" type="button">Reîncarcă</button></div><p id="categoryLabel">Vaccinuri</p><div id="history"></div></section>
+<nav class="tabs" aria-label="Categorii"></nav><div class="grid"><section class="card"><div class="history-head"><h2><span id="categoryLabel">Vaccinuri</span> <span id="count"></span></h2><button id="refresh" type="button">Reîncarcă</button></div><div id="history"></div></section>
 <section class="card"><h2 id="formTitle">Adaugă o înregistrare</h2>
 <form id="form"><div class="fields"><label>Data <input name="date" type="date" required></label><label class="treatment">Următoarea administrare <input name="nextDate" type="date"></label><label class="treatment wide">Produs / vaccin <input name="product" maxlength="150" placeholder="Denumirea din carnet" required></label><label id="weightField" hidden>Greutate (kg) <input name="weight" type="number" min="0.01" max="150" step="0.01" placeholder="Ex.: 10,4" disabled></label><label class="wide">Medic / clinică <input name="vet" maxlength="150" placeholder="Opțional"></label><label class="wide">Observații <textarea name="notes" maxlength="2000" placeholder="Cum s-a simțit Enzo sau alte detalii"></textarea></label></div><button class="primary" id="save">Salvează</button><button type="button" id="cancelEdit" hidden>Renunță la modificare</button></form><div id="status" role="status" aria-live="polite">Se încarcă istoricul…</div></section></div>
 <footer>Datele se salvează după confirmare. Termenele se completează conform indicațiilor medicului veterinar.</footer></div></main>
