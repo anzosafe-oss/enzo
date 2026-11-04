@@ -1,5 +1,5 @@
 'use strict';
-const client = supabase.createClient('https://caajrctjlxehhofuwhag.supabase.co','sb_publishable_9MJ6QZaJ13nfuwYJyLZSmA_WAh0Rret');
+const client = supabase.createClient('https://caajrctjlxehhofuwhag.supabase.co','sb_publishable_9MJ6QZaJ13nfuwYJyLZSmA_WAh0Rret',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const categories=['Vaccinuri','Vaccin Antirabic','Deparazitari Interne','Deparazitari Externe','Greutate'];
 const labels=['Vaccinuri','Vaccin antirabic','Deparazitări interne','Deparazitări externe','Greutate'];
 const form=document.querySelector('#form'),save=document.querySelector('#save'),statusEl=document.querySelector('#status');
@@ -22,14 +22,15 @@ form.elements.date.value=today();
 const nav=document.querySelector('.tabs');
 categories.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.textContent=labels[i];b.onclick=()=>{if(busy)return;cancelEdit();selected=c;setCategory();render()};nav.append(b)});
 function setCategory(){const weight=selected==='Greutate';nav.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-pressed',String(categories[i]===selected)));document.querySelectorAll('.treatment').forEach(el=>{el.hidden=weight;el.querySelector('input').disabled=weight});document.querySelector('#weightField').hidden=!weight;form.elements.weight.disabled=!weight;form.elements.weight.required=weight;form.elements.product.required=!weight;document.querySelector('#categoryLabel').textContent=labels[categories.indexOf(selected)]}
-function cancelEdit(){editingId=null;pendingId=null;form.reset();form.elements.date.value=today();document.querySelector('#formTitle').textContent='Adaugă o înregistrare';document.querySelector('#cancelEdit').hidden=true;save.textContent='Salvează'}
-function startEdit(r){if(busy)return;editingId=r.id;pendingId=null;['date','product','weight','vet','notes'].forEach(n=>form.elements[n].value=r[n]??'');form.elements.nextDate.value=r.next_date||'';document.querySelector('#formTitle').textContent='Modifică înregistrarea';document.querySelector('#cancelEdit').hidden=false;message('Modifici înregistrarea din '+formatDate(r.date)+'.');form.scrollIntoView({behavior:'smooth',block:'start'})}
+function cancelEdit(){editingId=null;pendingId=null;form.reset();form.elements.date.value=today();document.querySelector('#formTitle').textContent='Adaugă o înregistrare';document.querySelector('#cancelEdit').hidden=true;save.textContent='Salvează';document.querySelector('#recordEditor').hidden=true}
+async function startEdit(r){if(busy||!await authorizeEdit())return;document.querySelector('#recordEditor').hidden=false;editingId=r.id;pendingId=null;['date','product','weight','vet','notes'].forEach(n=>form.elements[n].value=r[n]??'');form.elements.nextDate.value=r.next_date||'';document.querySelector('#formTitle').textContent='Modifică înregistrarea';document.querySelector('#cancelEdit').hidden=false;message('Modifici înregistrarea din '+formatDate(r.date)+'.');form.scrollIntoView({behavior:'smooth',block:'start'})}
 document.querySelector('#cancelEdit').onclick=()=>{if(!busy){cancelEdit();message('Modificarea a fost anulată.')}};
 function render(){const list=document.querySelector('#history');list.replaceChildren();const rows=records.filter(r=>r.category===selected);document.querySelector('#count').textContent=`(${rows.length})`;if(!rows.length){const p=document.createElement('p');p.className='empty';p.textContent='Încă nu ai înregistrări în această categorie.';list.append(p)}rows.forEach(r=>{const article=document.createElement('article');article.className='entry';const date=document.createElement('time');date.textContent=formatDate(r.date);const title=document.createElement('strong');title.textContent=r.category==='Greutate'?String(r.weight).replace('.',',')+' kg':r.product;article.append(date,title);[r.next_date?'Următoarea administrare: '+formatDate(r.next_date):'',r.vet,r.notes].filter(Boolean).forEach(s=>{const p=document.createElement('p');p.textContent=s;article.append(p)});const b=document.createElement('button');b.type='button';b.textContent='Modifică';b.disabled=busy;b.onclick=()=>startEdit(r);const actions=document.createElement('div');actions.className='entry-actions';const remove=document.createElement('button');remove.type='button';remove.className='delete-record';remove.textContent='Șterge';remove.disabled=busy;remove.onclick=()=>deleteRecord(r);actions.append(b,remove);article.append(actions);list.append(article)})}
 async function deleteRecord(record){
  if(busy||!user)return;
  const description=record.category==='Greutate'?String(record.weight).replace('.',',')+' kg':record.product;
  if(!window.confirm('Ștergi înregistrarea „'+description+'” din '+formatDate(record.date)+'? Această acțiune nu poate fi anulată.'))return;
+ if(!await authorizeEdit())return;
  ++loadSequence;
  setBusy(true);message('Se șterge…');
  try{
@@ -42,13 +43,13 @@ async function deleteRecord(record){
  }catch(error){message('Ștergerea nu a fost confirmată. Apasă Reîncarcă pentru a verifica istoricul. Dacă înregistrarea rămâne, verifică și configurarea permisiunii de ștergere.',true)}
  finally{setBusy(false)}
 }
-function setBusy(value){busy=value;save.disabled=value||!user;document.querySelector('#refresh').disabled=value;document.querySelector('#cancelEdit').disabled=value;document.querySelector('#logout').disabled=value;nav.querySelectorAll('button').forEach(b=>b.disabled=value);form.querySelectorAll('input,textarea').forEach(el=>el.readOnly=value);render()}
+function setBusy(value){busy=value;save.disabled=value||!user;document.querySelector('#refresh').disabled=value;document.querySelector('#cancelEdit').disabled=value;document.querySelector('#logout').disabled=value;document.querySelector('#addRecord').disabled=value;nav.querySelectorAll('button').forEach(b=>b.disabled=value);form.querySelectorAll('input,textarea').forEach(el=>el.readOnly=value);render()}
 async function load(){if(!user||busy)return;const seq=++loadSequence,uid=user.id;document.querySelector('#refresh').disabled=true;message('Se încarcă istoricul…');try{const {data,error}=await client.from('health_records').select('*').eq('user_id',uid).order('date',{ascending:false}).order('created_at',{ascending:false});if(error)throw error;if(seq!==loadSequence||user?.id!==uid)return;records=data;render();message('Datele sunt încărcate.')}catch(e){if(seq===loadSequence)message(navigator.onLine?'Istoricul nu a putut fi încărcat. Apasă Reîncarcă pentru a încerca din nou.':'Nu ai conexiune la internet. Reconectează-te și apasă Reîncarcă.',true)}finally{if(seq===loadSequence)document.querySelector('#refresh').disabled=false}}
 document.querySelector('#refresh').onclick=load;
 form.addEventListener('input',()=>pendingId=null);
 form.addEventListener('submit',async e=>{e.preventDefault();if(!user||busy||!form.reportValidity())return;const values=Object.fromEntries(new FormData(form)),weight=selected==='Greutate';if(!weight&&values.nextDate&&values.nextDate<values.date){message('Următoarea administrare nu poate fi înaintea datei înregistrării.',true);return}if(!weight&&!values.product.trim()){message('Completează produsul.',true);return}pendingId=pendingId||crypto.randomUUID();const id=editingId||pendingId,wasEdit=!!editingId;
  const payload={category:selected,date:values.date,product:weight?'':values.product.trim(),next_date:weight?null:values.nextDate||null,weight:weight?Number(values.weight):null,vet:values.vet.trim(),notes:values.notes.trim()};
- setBusy(true);message('Se salvează…');try{
+ if(!await authorizeEdit())return;setBusy(true);message('Se salvează…');try{
   let result;
   if(wasEdit)result=await client.from('health_records').update(payload).eq('id',id).eq('user_id',user.id).select().single();
   else {result=await client.from('health_records').insert({...payload,id,user_id:user.id}).select().single();
@@ -58,7 +59,48 @@ form.addEventListener('submit',async e=>{e.preventDefault();if(!user||busy||!for
  }catch(e){message(navigator.onLine?'Salvarea nu a fost confirmată. Câmpurile au fost păstrate; poți reîncerca.':'Nu ai conexiune la internet. Câmpurile au fost păstrate; reconectează-te și reîncearcă.',true)}finally{setBusy(false)}});
 loginForm.addEventListener('submit',async e=>{e.preventDefault();const button=document.querySelector('#loginButton'),msg=document.querySelector('#loginStatus');button.disabled=true;msg.textContent='Se verifică datele…';try{const {error}=await client.auth.signInWithPassword({email:loginForm.elements.email.value.trim(),password:loginForm.elements.password.value});if(error)throw error;loginForm.elements.password.value='';msg.textContent=''}catch(e){msg.textContent=navigator.onLine?'Autentificarea nu a reușit. Verifică e-mailul și parola și încearcă din nou.':'Nu ai conexiune la internet.'}finally{button.disabled=false}});
 document.querySelector('#logout').onclick=async()=>{if(busy)return;document.querySelector('#logout').disabled=true;const {error}=await client.auth.signOut({scope:'local'});document.querySelector('#logout').disabled=false;if(error)message('Deconectarea nu a reușit. Încearcă din nou.',true)};
-function sessionChanged(session){const previous=user?.id;user=session?.user||null;loginPanel.hidden=!!user;appPanel.hidden=!user;save.disabled=!user;if(!user){++loadSequence;records=[];cancelEdit();render()}else if(previous!==user.id){records=[];cancelEdit();render();setTimeout(load,0)}}
+function sessionChanged(session){const previous=user?.id;user=session?.user||null;loginPanel.hidden=!!user;appPanel.hidden=!user;save.disabled=!user;if(previous!==user?.id)editUntil=0;if(!user){finishReauth(false);++loadSequence;records=[];cancelEdit();render()}else if(previous!==user.id){records=[];cancelEdit();render();setTimeout(load,0)}}
+
+let editUntil=0,reauthPending=null,reauthBusy=false;
+const reauthDialog=document.querySelector('#reauthDialog');
+function finishReauth(ok){
+ const resolve=reauthPending;reauthPending=null;
+ document.querySelector('#reauthPassword').value='';
+ if(reauthDialog.open)reauthDialog.close();
+ if(resolve)resolve(ok);
+}
+function authorizeEdit(){
+ if(!user)return Promise.resolve(false);
+ if(Date.now()<editUntil)return Promise.resolve(true);
+ if(reauthPending)return Promise.resolve(false);
+ document.querySelector('#reauthStatus').textContent='';
+ document.querySelector('#reauthPassword').value='';
+ const promise=new Promise(resolve=>reauthPending=resolve);
+ reauthDialog.showModal();document.querySelector('#reauthPassword').focus();
+ return promise;
+}
+reauthDialog.addEventListener('cancel',e=>{e.preventDefault();if(!reauthBusy)finishReauth(false)});
+document.querySelector('#reauthCancel').onclick=()=>{if(!reauthBusy)finishReauth(false)};
+document.querySelector('#reauthForm').addEventListener('submit',async e=>{
+ e.preventDefault();if(reauthBusy||!user)return;
+ const uid=user.id,email=user.email;reauthBusy=true;
+ document.querySelector('#reauthSubmit').disabled=true;document.querySelector('#reauthCancel').disabled=true;
+ document.querySelector('#reauthStatus').textContent='Se verifică parola…';
+ try{
+  const {data,error}=await client.auth.signInWithPassword({email,password:document.querySelector('#reauthPassword').value});
+  if(error||data.user?.id!==uid)throw error||new Error('Cont diferit');
+  editUntil=Date.now()+4*60*1000+50000;
+  finishReauth(true);
+ }catch(error){document.querySelector('#reauthStatus').textContent='Parola nu a fost confirmată. Verifică parola și conexiunea.';document.querySelector('#reauthPassword').value='';document.querySelector('#reauthPassword').focus()}
+ finally{reauthBusy=false;document.querySelector('#reauthSubmit').disabled=false;document.querySelector('#reauthCancel').disabled=false}
+});
+document.querySelector('#addRecord').onclick=async()=>{
+ if(busy||!await authorizeEdit())return;
+ cancelEdit();document.querySelector('#recordEditor').hidden=false;
+ document.querySelector('#cancelEdit').hidden=false;
+ form.scrollIntoView({behavior:'smooth',block:'start'});
+};
+
 client.auth.onAuthStateChange((_event,session)=>sessionChanged(session));
 setCategory();render();
 client.auth.getSession().then(({data,error})=>{if(error){document.querySelector('#loginStatus').textContent='Conexiunea nu a putut fi verificată. Încearcă să te autentifici.';return}sessionChanged(data.session)});
