@@ -1,0 +1,17 @@
+create extension if not exists pg_cron;
+create extension if not exists pg_net with schema extensions;
+create table public.mypet_push_config(id boolean primary key default true check(id),keys jsonb not null);
+insert into public.mypet_push_config(id,keys) values(true,jsonb_build_object('cronToken',gen_random_uuid()::text||gen_random_uuid()::text));
+create table public.mypet_push_subscriptions(id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,endpoint text not null unique,subscription jsonb not null,created_at timestamptz not null default now());
+create index mypet_push_subscriptions_user_idx on public.mypet_push_subscriptions(user_id);
+create table public.mypet_push_deliveries(id uuid primary key default gen_random_uuid(),subscription_id uuid not null references public.mypet_push_subscriptions(id) on delete cascade,record_id uuid not null references public.health_records(id) on delete cascade,next_date date not null,created_at timestamptz not null default now(),sent_at timestamptz,unique(subscription_id,record_id,next_date));
+create index mypet_push_deliveries_record_idx on public.mypet_push_deliveries(record_id);
+alter table public.mypet_push_config enable row level security;
+alter table public.mypet_push_subscriptions enable row level security;
+alter table public.mypet_push_deliveries enable row level security;
+revoke all on public.mypet_push_config,public.mypet_push_subscriptions,public.mypet_push_deliveries from public,anon,authenticated;
+grant all on public.mypet_push_config,public.mypet_push_subscriptions,public.mypet_push_deliveries to service_role;
+select cron.schedule('mypet-seven-day-push','23 * * * *',$job$select net.http_post(url:='https://caajrctjlxehhofuwhag.supabase.co/functions/v1/mypet-push',headers:=jsonb_build_object('Content-Type','application/json','x-mypet-cron',(select keys->>'cronToken' from public.mypet_push_config where id=true)),body:='{}'::jsonb,timeout_milliseconds:=60000);$job$);
+alter table public.mypet_push_deliveries add column stage integer not null default 7 check(stage in (1,7));
+alter table public.mypet_push_deliveries drop constraint mypet_push_deliveries_subscription_id_record_id_next_date_key;
+alter table public.mypet_push_deliveries add constraint mypet_push_delivery_stage_unique unique(subscription_id,record_id,next_date,stage);
