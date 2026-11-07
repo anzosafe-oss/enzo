@@ -17,9 +17,11 @@ if(!due.length)continue;
 checked(await db.from('mypet_push_deliveries').delete().eq('subscription_id',sub.id).is('sent_at',null).lt('created_at',new Date(Date.now()-300000).toISOString()));
 const claims=checked(await db.from('mypet_push_deliveries').upsert(due.map((d:any)=>({subscription_id:sub.id,record_id:d.id,next_date:d.next_date,stage:reminderStage(d.next_date,today)})),{onConflict:'subscription_id,record_id,next_date,stage',ignoreDuplicates:true}).select('*'));
 if(!claims.length)continue;
+const windowEnd=new Date(Date.parse(today+'T00:00:00Z')+7*86400000).toISOString().slice(0,10);
+const badge=checked(await db.from('health_records').select('id').eq('user_id',sub.user_id).neq('category','Greutate').gte('next_date',today).lte('next_date',windowEnd)).length;
 const body='Ai o administrare programată în curând. Deschide MyPet pentru detalii.';
 try{
-const request=webpush.generateRequestDetails(sub.subscription,JSON.stringify({title:'MyPet · Memento',body}),{TTL:3600,urgency:'normal',topic:'mypet-due',vapidDetails:{subject:'mailto:anzo.safe@gmail.com',publicKey:keys.publicKey,privateKey:keys.privateKey}});
+const request=webpush.generateRequestDetails(sub.subscription,JSON.stringify({title:'MyPet · Memento',body,badge}),{TTL:3600,urgency:'normal',topic:'mypet-due',vapidDetails:{subject:'mailto:anzo.safe@gmail.com',publicKey:keys.publicKey,privateKey:keys.privateKey}});
 const res=await fetch(request.endpoint,{method:request.method,headers:request.headers,body:request.body,redirect:'error',signal:AbortSignal.timeout(15000)});
 if(!res.ok){if([404,410].includes(res.status))checked(await db.from('mypet_push_subscriptions').delete().eq('id',sub.id));throw Error('Push HTTP '+res.status)}
 checked(await db.from('mypet_push_deliveries').update({sent_at:new Date().toISOString()}).in('id',claims.map((c:any)=>c.id)));sent++;
