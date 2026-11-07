@@ -44,6 +44,11 @@ dialog{width:calc(100% - 32px);max-width:420px;max-height:85dvh;overflow:auto;pa
 dialog::backdrop{background:#102e2780}
 dialog button{width:100%;margin-top:12px}
 @media(max-width:420px){.page-heading h1{font-size:clamp(17px,5vw,21px);letter-spacing:-.6px}.page-heading #logout{padding:9px 10px;font-size:13px}}
+
+.mypet-brand{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;font-weight:800;letter-spacing:-1px}
+.mypet-brand img{display:block;flex-shrink:0;width:40px;height:40px;border-radius:10px;object-fit:contain}
+.brand-my{color:#234e46}.brand-pet{color:#628a50}
+@media(max-width:420px){.page-heading .mypet-brand{font-size:27px}.mypet-brand img{width:34px;height:34px;border-radius:8px}}
 </style>
 
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#234e46">
@@ -53,8 +58,8 @@ dialog button{width:100%;margin-top:12px}
 </head><body>
 
 <main>
-<section id="loginPanel" class="card" style="max-width:440px;margin:30px auto"><h1 style="font-size:28px">MyPet</h1><p>Intră în cont pentru a vedea și actualiza carnetul.</p><form id="loginForm"><label>E-mail<input name="email" type="email" autocomplete="username" required></label><label style="margin-top:16px">Parolă<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" id="loginButton">Autentificare</button></form><p id="loginStatus" role="status" aria-live="polite"></p></section>
-<div id="appPanel" hidden><div class="page-heading"><h1>MyPet</h1><button id="logout" type="button">LogOut</button></div>
+<section id="loginPanel" class="card" style="max-width:440px;margin:30px auto"><h1 style="font-size:28px"><span class="mypet-brand"><img src="./icons/icon-192.png" alt="" width="40" height="40"><span><span class="brand-my">My</span><span class="brand-pet">Pet</span></span></span></h1><p>Intră în cont pentru a vedea și actualiza carnetul.</p><form id="loginForm"><label>E-mail<input name="email" type="email" autocomplete="username" required></label><label style="margin-top:16px">Parolă<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" id="loginButton">Autentificare</button></form><p id="loginStatus" role="status" aria-live="polite"></p></section>
+<div id="appPanel" hidden><div class="page-heading"><h1><span class="mypet-brand"><img src="./icons/icon-192.png" alt="" width="40" height="40"><span><span class="brand-my">My</span><span class="brand-pet">Pet</span></span></span></h1><button id="logout" type="button">LogOut</button></div>
 <dl class="profile"><div><dt>Nume:</dt><dd>Quintus Enzo</dd></div><div><dt>Rasa:</dt><dd>Staffordshire Bull Terrier</dd></div><div><dt>Data Nastere:</dt><dd>25.05.2026</dd></div><div><dt>Vârsta:</dt><dd id="enzoAge"></dd></div><div><dt>Canisa:</dt><dd>Transfilvania Staff SBT</dd></div><div><dt>CIP:</dt><dd>642096302089370</dd></div></dl>
 <nav class="tabs" aria-label="Categorii"></nav><div class="grid"><section class="card"><div class="history-head"><h2><span id="categoryLabel">Vaccinuri</span> <span id="count"></span></h2><div class="entry-actions"><button id="addRecord" type="button">Adaugă</button><button id="refresh" type="button">Reîncarcă</button></div></div><div id="history"></div></section>
 <section class="card" id="recordEditor" hidden><h2 id="formTitle">Adaugă o înregistrare</h2>
