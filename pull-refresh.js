@@ -19,7 +19,7 @@ let start=null,distance=0,dragging=false,reloading=false;
 const atTop=()=>Math.max(window.scrollY||0,document.scrollingElement?.scrollTop||0)<=1;
 const blocked=()=>reloading||document.querySelector('dialog[open]')||document.visibilityState==='hidden'||(typeof busy!=='undefined'&&busy);
 const reset=()=>{start=null;distance=0;dragging=false;if(!reloading){indicator.hidden=true;indicator.removeAttribute('data-loading');indicator.removeAttribute('data-ready')}};
-const formHasChanges=()=>[...document.querySelectorAll('form')].some(f=>dirtyForms.has(f));
+const formHasChanges=()=>[...document.querySelectorAll('form')].some(f=>f.getClientRects().length>0&&dirtyForms.has(f));
 document.addEventListener('touchstart',e=>{
 reset();
 if(!standalone()||blocked()||!atTop()||e.touches.length!==1||window.visualViewport?.scale>1)return;
