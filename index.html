@@ -46,9 +46,9 @@ dialog button{width:100%;margin-top:12px}
 @media(max-width:420px){.page-heading h1{font-size:clamp(17px,5vw,21px);letter-spacing:-.6px}.page-heading #logout{padding:9px 10px;font-size:13px}}
 
 .mypet-brand{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;font-weight:800;letter-spacing:-1px}
-.mypet-brand img{display:block;flex-shrink:0;width:40px;height:40px;border-radius:10px;object-fit:contain}
+.mypet-brand img,.mypet-brand canvas{display:block;flex-shrink:0;width:40px;height:40px;border-radius:10px;object-fit:contain}
 .brand-my{color:#234e46}.brand-pet{color:#628a50}
-@media(max-width:420px){.page-heading .mypet-brand{font-size:27px}.mypet-brand img{width:34px;height:34px;border-radius:8px}}
+@media(max-width:420px){.page-heading .mypet-brand{font-size:27px}.mypet-brand img,.mypet-brand canvas{width:34px;height:34px;border-radius:8px}}
 </style>
 
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#234e46">
@@ -67,4 +67,39 @@ dialog button{width:100%;margin-top:12px}
 <footer>Datele se salvează după confirmare. Termenele se completează conform indicațiilor medicului veterinar.</footer></div></main>
 <dialog id="reauthDialog" aria-labelledby="reauthTitle"><h2 id="reauthTitle">Confirmă parola</h2><p>Pentru modificarea carnetului, confirmă parola contului tău. Accesul la editare este valabil 60 de minute.</p><form id="reauthForm"><label>Parolă<input id="reauthPassword" type="password" autocomplete="current-password" required></label><p id="reauthStatus" role="status" aria-live="polite"></p><button type="submit" class="primary" id="reauthSubmit">Confirmă</button><button type="button" id="reauthCancel">Renunță</button></form></dialog>
 <script src="vendor/supabase.min.js"></script>
-<script src="app.js" defer></script></body></html>
+<script src="app.js" defer></script>
+<script>
+/* Recolor the original artwork without changing its geometry or app icons. */
+document.querySelectorAll('.mypet-brand img').forEach(original=>{
+ const source=new Image();
+ source.onload=()=>{
+  const canvas=document.createElement('canvas');
+  canvas.width=source.naturalWidth;canvas.height=source.naturalHeight;
+  canvas.setAttribute('aria-hidden','true');
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(source,0,0);
+  const frame=ctx.getImageData(0,0,canvas.width,canvas.height),data=frame.data;
+  const w=canvas.width,h=canvas.height,seen=new Uint8Array(w*h),queue=[];
+  const dark=i=>data[i*4]+data[i*4+1]+data[i*4+2]<384;
+  function visit(i){if(!seen[i]&&dark(i)){seen[i]=1;queue.push(i)}}
+  for(let x=0;x<w;x++){visit(x);visit((h-1)*w+x)}
+  for(let y=0;y<h;y++){visit(y*w);visit(y*w+w-1)}
+  for(let head=0;head<queue.length;head++){
+   const i=queue[head],x=i%w,y=Math.floor(i/w);
+   if(x)visit(i-1);if(x<w-1)visit(i+1);if(y)visit(i-w);if(y<h-1)visit(i+w);
+  }
+  for(let i=0;i<w*h;i++){
+   const p=i*4;
+   if(seen[i]){data[p+3]=0;continue}
+   const light=(data[p]+data[p+1]+data[p+2])/765;
+   data[p]=Math.round(255+(98-255)*light);
+   data[p+1]=Math.round(255+(138-255)*light);
+   data[p+2]=Math.round(255+(80-255)*light);
+  }
+  ctx.putImageData(frame,0,0);
+  original.replaceWith(canvas);
+ };
+ source.src=original.src;
+});
+</script>
+</body></html>
