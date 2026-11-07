@@ -57,6 +57,40 @@ dialog button{width:100%;margin-top:12px}
 .section-heading{margin:24px 0;align-items:center;gap:16px}.section-heading .dogs{display:flex;flex-wrap:wrap;flex:1;min-width:0;margin:0;gap:12px}.section-heading #addDog{flex-shrink:0;white-space:nowrap}.section-heading .dog-card{min-width:0;flex:0 1 230px} @media(max-width:650px){.section-heading{align-items:flex-start;gap:10px}.section-heading .dogs{gap:8px}.section-heading .dog-card{width:100%;flex-basis:100%}.section-heading #addDog{padding:12px 10px;font-size:12px}}
 
 .app-status{min-height:24px;font-size:14px}.danger-zone button{width:100%}
+
+/* Responsive record structure: date, content and actions are explicit groups. */
+.entry{display:grid;grid-template-columns:100px minmax(0,1fr) auto;gap:16px;align-items:start;padding:22px 0}
+.entry>*{min-width:0}.entry-content strong{font-size:16px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.entry-content p{font-size:14px;line-height:1.6;margin:6px 0;overflow-wrap:anywhere}
+.entry time{font-size:13px;line-height:1.5;padding-top:3px}
+.entry>.entry-actions{display:flex;flex-direction:row;align-items:center;align-self:start;gap:8px;margin:0}
+.entry-actions button{min-height:40px;white-space:nowrap}
+.history-head{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.history-head h2{flex:1 1 160px;line-height:1.4}
+.history-head>.entry-actions{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;margin:0}
+.history-head button{min-height:40px}
+.profile dd{overflow-wrap:anywhere}
+dialog{max-height:calc(100dvh - 32px);overscroll-behavior:contain}
+@media(max-width:760px){
+ main{padding:20px 16px 28px}.card{padding:20px}
+ .entry{display:flex;flex-direction:column;gap:8px;padding:22px 0}
+ .entry-content{width:100%}.entry-content strong{font-size:16px}
+ .entry>.entry-actions{flex-direction:row;flex-wrap:wrap;margin-top:6px;align-self:stretch}
+ .entry>.entry-actions button{padding:10px 16px;font-size:14px}
+ .history-head h2{font-size:20px;flex-basis:100%}
+ .history-head>.entry-actions{width:100%;flex-direction:row;flex-wrap:nowrap}
+ .history-head>.entry-actions button{max-width:none;flex:1;font-size:14px;padding:10px 12px}
+ .profile{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px}
+ .profile div{display:block}.profile dd{font-size:14px;line-height:1.5}
+ .profile-heading{align-items:center;flex-wrap:wrap}
+ .profile-heading h2{font-size:22px;overflow-wrap:anywhere}
+ .section-heading{align-items:center}.section-heading .dogs{flex:1}
+ .section-heading .dog-card{flex-basis:100%;width:100%}
+ .fields{grid-template-columns:minmax(0,1fr)}.wide{grid-column:auto}
+ dialog{padding:20px;width:calc(100% - 24px)}
+ .page-heading{gap:12px}.page-heading h1{font-size:28px}
+}
+@media(max-width:360px){main{padding-left:12px;padding-right:12px}.card,.profile-panel{padding:16px}.section-heading{flex-wrap:wrap}.section-heading #addDog{width:100%}.profile{grid-template-columns:minmax(0,1fr)}}
 </style>
 
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#234e46">
@@ -71,7 +105,7 @@ dialog button{width:100%;margin-top:12px}
 <div class="section-heading"><div id="dogs" class="dogs" aria-label="Cățeii tăi"></div><button class="primary" id="addDog">＋ Adaugă cățel</button></div><section id="noDogs" class="card empty" hidden><h2>Adaugă primul tău cățel</h2><p>Profilul și toate înregistrările lui vor fi reunite într-un singur carnet.</p><button class="primary" id="addFirstDog">＋ Adaugă cățel</button></section><section class="profile-panel"><div class="profile-heading"><div><span class="eyebrow">CARNET DE SĂNĂTATE</span><h2 id="dogName"></h2></div><button id="editDog">Modifică profilul</button></div><dl id="profile" class="profile"></dl></section><p id="petStatus" class="app-status" role="status" aria-live="polite"></p><nav class="tabs" aria-label="Categorii"></nav><div class="grid" id="recordsArea"><section class="card"><div class="history-head"><h2><span id="categoryLabel">Vaccinuri</span> <span id="count"></span></h2><div class="entry-actions"><button id="addRecord" type="button">Adaugă</button><button id="refresh" type="button">Reîncarcă</button></div></div><div id="history"></div></section>
 <section class="card" id="recordEditor" hidden><h2 id="formTitle">Adaugă o înregistrare</h2>
 <form id="form"><div class="fields"><label>Data <input name="date" type="date" required></label><label class="treatment">Următoarea administrare <input name="nextDate" type="date"></label><label class="treatment wide">Produs / vaccin <input name="product" maxlength="150" placeholder="Denumirea din carnet" required></label><label id="weightField" hidden>Greutate (kg) <input name="weight" type="number" min="0.01" max="150" step="0.01" placeholder="Ex.: 10,4" disabled></label><label class="wide">Medic / clinică <input name="vet" maxlength="150" placeholder="Opțional"></label><label class="wide">Observații <textarea name="notes" maxlength="2000" placeholder="Cum s-a simțit cățelul sau alte detalii"></textarea></label></div><button class="primary" id="save">Salvează</button><button type="button" id="cancelEdit" hidden>Renunță la modificare</button></form><div id="status" role="status" aria-live="polite">Se încarcă istoricul…</div></section></div>
-<footer>MyPet v1.0.1</footer></div></main>
+<footer>MyPet v1.0.2</footer></div></main>
 <dialog id="reauthDialog" aria-labelledby="reauthTitle"><h2 id="reauthTitle">Confirmă parola</h2><p>Pentru modificarea carnetului, confirmă parola contului tău. Accesul la editare este valabil 60 de minute.</p><form id="reauthForm"><label>Parolă<input id="reauthPassword" type="password" autocomplete="current-password" required></label><p id="reauthStatus" role="status" aria-live="polite"></p><button type="submit" class="primary" id="reauthSubmit">Confirmă</button><button type="button" id="reauthCancel">Renunță</button></form></dialog>
 <dialog id="dogDialog"><div class="dialog-title"><h2 id="dogTitle"></h2><button class="close" data-close="dogDialog" aria-label="Închide">×</button></div><p>Completează profilul. Îl poți modifica oricând.</p><form id="dogForm"><div class="fields"><label class="wide">Nume<input name="name" required maxlength="80" placeholder="Cum îl cheamă?"></label><label class="wide">Rasă<input name="breed" maxlength="100" placeholder="Ex.: Staffordshire Bull Terrier"></label><label>Data nașterii<input name="birth" type="date" required></label><label>Sex<select name="sex"><option>Mascul</option><option>Femelă</option></select></label><label class="wide">Canisă<input name="breeder" maxlength="100" placeholder="Opțional"></label><label class="wide">Microcip (CIP)<input name="chip" maxlength="30" inputmode="numeric" placeholder="Opțional"></label></div><p id="dogError" role="status"></p><button class="primary">Salvează profilul</button><button type="button" data-close="dogDialog">Renunță</button><div class="danger-zone" id="deleteDogArea" hidden><p>Ștergerea profilului elimină și toate înregistrările acestui cățel.</p><button type="button" class="delete-record" id="deleteDog">Șterge cățelul</button></div></form></dialog>
 <dialog id="confirmDelete"><h2>Ștergi cățelul?</h2><p id="deleteDescription"></p><p>Profilul și toate înregistrările lui vor fi șterse definitiv. Această acțiune nu poate fi anulată.</p><p id="deleteError" role="status"></p><button type="button" class="delete-record" id="confirmDeleteDog">Da, șterge cățelul</button><button type="button" id="cancelDeleteDog">Renunță</button></dialog><script src="vendor/supabase.min.js"></script>
